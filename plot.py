@@ -90,6 +90,29 @@ def build_scatter_confidence_vs_cpi(combined: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def build_scatter_confidence_vs_unemployment(combined: pd.DataFrame) -> pd.DataFrame:
+    """Matches each confidence reading to the unemployment rate for the
+    same month (both series are monthly)."""
+    confidence = combined[combined["series"] == "anz_roy_morgan_consumer_confidence"][
+        ["date", "value"]
+    ].copy()
+    unemployment = combined[combined["series"] == "abs_unemployment_rate_australia"][
+        ["date", "value"]
+    ].copy()
+
+    confidence["month"] = confidence["date"].dt.to_period("M")
+    unemployment["month"] = unemployment["date"].dt.to_period("M")
+
+    merged = confidence.merge(unemployment, on="month", suffixes=("_confidence", "_unemployment"))
+
+    return pd.DataFrame(
+        {
+            "confidence": merged["value_confidence"],
+            "unemployment_rate": merged["value_unemployment"],
+        }
+    )
+
+
 # ---------------------------------------------------------------------------
 # Plotting
 # ---------------------------------------------------------------------------
@@ -175,6 +198,16 @@ def plot_scatter_confidence_vs_cpi(scatter: pd.DataFrame):
     save(fig, "scatter_confidence_vs_cpi")
 
 
+def plot_scatter_confidence_vs_unemployment(scatter: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(10, 7))
+    ax.scatter(scatter["unemployment_rate"], scatter["confidence"], color="#588157", s=12, alpha=0.7)
+    ax.set_title("Consumer Confidence vs Unemployment Rate (1978-2026)", fontsize=14)
+    ax.set_xlabel("Unemployment Rate (%, Seasonally Adjusted)")
+    ax.set_ylabel("ANZ-Roy Morgan Consumer Confidence")
+    ax.grid(True, alpha=0.3)
+    save(fig, "scatter_confidence_vs_unemployment")
+
+
 def plot_confidence_with_recessions(combined: pd.DataFrame):
     fig, ax = plt.subplots(figsize=(13, 7))
 
@@ -240,6 +273,7 @@ def main():
 
     scatter_cashrate = build_scatter_confidence_vs_cashrate(combined)
     scatter_cpi = build_scatter_confidence_vs_cpi(combined)
+    scatter_unemployment = build_scatter_confidence_vs_unemployment(combined)
 
     plot_confidence_indices(combined)
     plot_cpi_index(combined)
@@ -247,10 +281,11 @@ def main():
     plot_cash_rate(combined)
     plot_scatter_confidence_vs_cashrate(scatter_cashrate)
     plot_scatter_confidence_vs_cpi(scatter_cpi)
+    plot_scatter_confidence_vs_unemployment(scatter_unemployment)
     plot_confidence_with_recessions(combined)
     plot_confidence_and_cashrate_dual_axis(combined)
 
-    print(f"wrote 8 charts to {PLOTS_DIR}")
+    print(f"wrote 9 charts to {PLOTS_DIR}")
 
 
 if __name__ == "__main__":
