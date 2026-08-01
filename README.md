@@ -1,26 +1,81 @@
-# australian-consumer-confidence
-Investigating how Australians feel about the economy using consumer confidence surveys. Compare confidence levels over time and explore how they relate to major economic events. Identify periods of optimism and uncertainty. 
+# Australian Consumer Confidence
+
+Investigating how Australians feel about the economy using consumer confidence surveys. Compare confidence levels over time and explore how they relate to major economic events. Identify periods of optimism and uncertainty.
 
 ## Current Indices for Australian Consumer Confidence
-https://www.tradingview.com/symbols/ECONOMICS-AUCCI/
-https://www.roymorgan.com/morgan-poll/consumer-confidence-anz-roy-morgan-australian-cc-monthly-ratings
 
-## Other Datasets to Look at
-- RBA cash rate / interest rate decisions (https://www.rba.gov.au/statistics/cash-rate/)
-- ABS Consumer Price Index (CPI), inflation rate (https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release)
-- Labour Force, Australia (https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release)
+- [TradingView: Australia Consumer Confidence Index](https://www.tradingview.com/symbols/ECONOMICS-AUCCI/)
+- [Roy Morgan: ANZ-Roy Morgan Consumer Confidence (monthly ratings)](https://www.roymorgan.com/morgan-poll/consumer-confidence-anz-roy-morgan-australian-cc-monthly-ratings)
+
+## Other Datasets to Look At
+
+- [RBA cash rate / interest rate decisions](https://www.rba.gov.au/statistics/cash-rate/)
+- [ABS Consumer Price Index (CPI), inflation rate](https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release)
+- [ABS Labour Force, Australia](https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/latest-release) (unemployment rate, underemployment) — wired up, see below
 - ABS Wage Price Index
-- ABS Labour Force Survey (unemployment rate, underemployment)
 - ABS Retail Trade
 - ABS Household Spending Indicator
 - CoreLogic / ABS residential property price indices
 - RBA household debt-to-income and mortgage rate data
-- ASX 200 (equity market performance)
 - AUD exchange rate
 - Commonwealth Budget releases (fiscal policy)
 - Iron ore / coal export prices (China-linked trade)
 - Net overseas migration (ABS)
-- NAB Business Confidence/Conditions Survey (leading indicator, business side)
-- Fuel and electricity price indices
-- RBA General Statistics (https://www.rba.gov.au/statistics/) 
+- [RBA General Statistics](https://www.rba.gov.au/statistics/)
+- Federal election dates (test whether confidence dips pre-election and recovers after — same shaded-overlay technique as recessions)
+- Commonwealth Budget night dates specifically (short-term confidence reaction to tax/spending announcements)
+- Fuel/electricity price indices (queued — likely from ABS CPI sub-group tables 3/8)
+- ASX 200 / equity market performance (queued)
+- NAB Business Confidence/Conditions Survey (queued)
+
+## Data Pipeline
+
+Two scripts, run in order:
+
+```sh
+pip install -r requirements.txt   # once
+python3 load_data.py              # raw/ -> cleaned/consumer_confidence_data.csv
+python3 plot.py                   # cleaned/ -> plots/*.png, *.svg
+```
+
+[load_data.py](load_data.py) loads manually downloaded raw files, cleans and
+reshapes each into tidy (long-format) rows — one row per
+`date, series, value` — and combines them into
+[cleaned/consumer_confidence_data.csv](cleaned/consumer_confidence_data.csv).
+
+[plot.py](plot.py) reads that CSV, builds the derived scatter joins
+(as-of match to cash rate, same-quarter match to CPI — in `build_scatter_*`
+functions, so the join logic is derived once rather than per-chart), and
+renders every chart into [plots/](plots/).
+
+### Datasets currently wired up
+
+| Series | Raw file | Loader function (in load_data.py) |
+| --- | --- | --- |
+| Westpac-MI Consumer Sentiment (AUCCI) | `raw/westpac_mi_consumer_sentiment.csv` | `load_westpac_mi_consumer_sentiment` (plain `date,value` CSV) |
+| ANZ-Roy Morgan Consumer Confidence | `raw/roy_morgan_consumer_confidence.csv` | `load_roy_morgan_consumer_confidence` (wide year × month export, 1973–present) |
+| RBA Cash Rate Target | `raw/rba_cash_rate_target.csv` | `load_rba_cash_rate_target` (RBA statistical table export, daily) |
+| ABS CPI (All Groups, Australia) | `raw/abs_cpi_quarterly.csv` | `load_abs_cpi_quarterly` (ABS Table 17 export, quarterly, 1948–present) |
+| ABS Labour Force (unemployment & participation rate, Australia) | `raw/abs_labour_force.csv` | `load_abs_labour_force` (ABS Table 001 export, monthly, 1978–present) |
+
+Raw source files in `raw/` are committed, with provenance documented in
+[raw/SOURCES.md](raw/SOURCES.md). `cleaned/*.csv` is gitignored since it's
+regenerable output from `load_data.py`.
+
+### Adding a new dataset
+
+Add a `load_<name>()` function to `load_data.py` that reads the raw file and
+returns a DataFrame with `date`, `series`, `value` columns, then register it
+in the `LOADERS` dict (filename → loader function). Two-column
+(`date,value`) sources are a few lines; sources with a header block or wide
+layout need the same reshaping approach as the existing loaders — read them
+first before writing a new one.
+
+## Plots and Insights
+
+Charts live in [plots/](plots/), regenerated by `python3 plot.py`. Findings
+and observations from those charts are tracked in
+[INSIGHTS.md](INSIGHTS.md) — check there before re-deriving something
+already explored, and add to it as new charts turn up something worth
+noting.
 

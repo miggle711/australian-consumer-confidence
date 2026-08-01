@@ -1,6 +1,7 @@
-/target
 .DS_Store
+~$*
+__pycache__/
 
-# Pipeline output:regenerable via cargo run, not committed.
-/cleaned/*.csv
+# Pipeline output: regenerable via pipeline.py, not committed.
+/cleaned/**/*.csv
 !/cleaned/.gitkeep
