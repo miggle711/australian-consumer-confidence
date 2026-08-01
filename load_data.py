@@ -124,7 +124,7 @@ def load_abs_cpi_quarterly() -> pd.DataFrame:
 
 def load_abs_labour_force() -> pd.DataFrame:
     """ABS Labour Force (Table 001). Header block where row 0 has data-item
-    labels and row 2 has series type (Trend/Seasonally Adjusted/Original) —
+    labels and row 2 has series type (Trend/Seasonally Adjusted/Original);
     the same label repeats three times, so columns are matched on label AND
     series type together. Only national unemployment rate and
     participation rate, seasonally adjusted, are kept."""
@@ -190,14 +190,14 @@ def load_all_sources() -> pd.DataFrame:
     for name, (filename, loader) in LOADERS.items():
         path = RAW_DIR / filename
         if not path.exists():
-            print(f"skipping {name} — raw file not found at {path}")
+            print(f"skipping {name}, raw file not found at {path}")
             continue
         frame = loader()
         print(f"loaded {name}: {len(frame)} rows")
         frames.append(frame)
 
     if not frames:
-        raise SystemExit("no datasets loaded — add CSVs under raw/ (see raw/SOURCES.md) and rerun")
+        raise SystemExit("no datasets loaded, add CSVs under raw/ (see raw/SOURCES.md) and rerun")
 
     combined = pd.concat(frames, ignore_index=True)
     combined = combined.sort_values(["series", "date"]).reset_index(drop=True)

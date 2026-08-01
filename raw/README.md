@@ -9,13 +9,13 @@ for what the resulting charts show.
 - **Series**: Westpac-Melbourne Institute Consumer Sentiment Index (AUCCI)
 - **Source**: [TradingView Economic Calendar API](https://www.tradingview.com/symbols/ECONOMICS-AUCCI/)
   (`economic-calendar.tradingview.com/events_by_history_symbol`)
-- **Coverage**: March 2013 – July 2026, monthly
+- **Coverage**: March 2013 - July 2026, monthly
 - **Retrieved**: 2026-08-01
 - **Note**: TradingView's economic-calendar API caps out at March 2013 for
   this symbol regardless of an earlier `from` date requested. The full
   series (published since 1975) exists on TradingView's interactive chart
   (`timeframe=ALL`) but is served over a protected WebSocket feed, not a
-  public REST endpoint — not fetched here. Longer free/paid alternatives
+  public REST endpoint, not fetched here. Longer free/paid alternatives
   investigated: Melbourne Institute (subscription required), Trading
   Economics and MacroMicro (both gate full history behind paid plans).
 
@@ -23,7 +23,7 @@ for what the resulting charts show.
 
 - **Series**: ANZ-Roy Morgan Australian Consumer Confidence, monthly ratings
 - **Source**: [Roy Morgan](https://www.roymorgan.com/morgan-poll/consumer-confidence-anz-roy-morgan-australian-cc-monthly-ratings)
-- **Coverage**: March 1973 – July 2026, monthly (sparse in early years —
+- **Coverage**: March 1973 - July 2026, monthly (sparse in early years:
   only quarterly surveys were run before the series became fully monthly)
 - **Retrieved**: manually downloaded by user, 2026-08-01
 - **Note**: Original export is wide format (one row per year, one column
@@ -33,10 +33,10 @@ for what the resulting charts show.
 
 ## rba_cash_rate_target.csv
 
-- **Series**: RBA Cash Rate Target (Table F1: Interest Rates and Yields –
+- **Series**: RBA Cash Rate Target (Table F1: Interest Rates and Yields -
   Money Market)
 - **Source**: [RBA Statistical Tables](https://www.rba.gov.au/statistics/tables/)
-- **Coverage**: January 2011 – July 2026, daily
+- **Coverage**: January 2011 - July 2026, daily
 - **Retrieved**: manually downloaded by user, 2026-08-01
 - **Note**: Original export includes a metadata header block (series
   descriptions, units, series IDs) and dozens of related columns (interbank
@@ -49,7 +49,7 @@ for what the resulting charts show.
   change (ABS Table 17, from catalogue 6401.0 Consumer Price Index,
   Australia)
 - **Source**: [ABS Consumer Price Index, Australia](https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release)
-- **Coverage**: September 1948 – June 2026, quarterly
+- **Coverage**: September 1948 - June 2026, quarterly
 - **Retrieved**: manually downloaded by user, 2026-08-01
 - **Note**: Original export includes per-capital-city columns (Sydney,
   Melbourne, Brisbane, etc.); only the national "Australia" index level and
@@ -58,16 +58,16 @@ for what the resulting charts show.
 
 ## abs_labour_force.csv
 
-- **Series**: Labour force status by Sex, Australia;  unemployment rate and
+- **Series**: Labour force status by Sex, Australia: unemployment rate and
   participation rate, seasonally adjusted (ABS Table 001, from catalogue
   6202.0 Labour Force, Australia)
 - **Source**: [ABS Labour Force, Australia](https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/latest-release)
-- **Coverage**: February 1978 – June 2026, monthly
+- **Coverage**: February 1978 - June 2026, monthly
 - **Retrieved**: manually downloaded by user (as xlsx), 2026-08-01
 - **Note**: Original download is
   `raw/Table 001. Labour force status by Sex, Australia - Trend, Seasonally adjusted and Original.xlsx`,
   converted to CSV (ISO dates) for the loader. The workbook has 115 columns
-  (Persons/Males/Females × Trend/Seasonally Adjusted/Original for a dozen
+  (Persons/Males/Females x Trend/Seasonally Adjusted/Original for a dozen
   labour force measures); only national "Persons, Seasonally Adjusted"
   unemployment rate and participation rate are extracted, by
   `load_abs_labour_force` in [../load_data.py](../load_data.py). Column
@@ -79,10 +79,10 @@ for what the resulting charts show.
 - **Series**: CPI, All Groups, Index numbers and Percentage change (ABS
   Table 1, monthly release)
 - **Source**: [ABS Consumer Price Index, Australia](https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia/latest-release)
-- **Coverage**: April 2024 – June 2026, monthly
+- **Coverage**: April 2024 - June 2026, monthly
 - **Retrieved**: manually downloaded by user, 2026-08-01
 - **Note**: ABS only began publishing a full monthly CPI series from April
-  2024 onward (prior to that, CPI was quarterly-only — see
+  2024 onward (prior to that, CPI was quarterly-only; see
   `abs_cpi_quarterly.csv` above for the long-running quarterly series).
-  Not currently wired into the pipeline (xlsx, not CSV) — kept here for a
+  Not currently wired into the pipeline (xlsx, not CSV), kept here for a
   possible future monthly-CPI loader.

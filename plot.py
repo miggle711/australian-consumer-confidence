@@ -266,7 +266,7 @@ def plot_confidence_and_cashrate_dual_axis(combined: pd.DataFrame):
 def main():
     in_path = CLEANED_DIR / "consumer_confidence_data.csv"
     if not in_path.exists():
-        raise SystemExit(f"{in_path} not found — run `python3 load_data.py` first.")
+        raise SystemExit(f"{in_path} not found, run `python3 load_data.py` first.")
 
     PLOTS_DIR.mkdir(exist_ok=True)
     combined = pd.read_csv(in_path, parse_dates=["date"])
