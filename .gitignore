@@ -1,0 +1,6 @@
+/target
+.DS_Store
+
+# Pipeline output:regenerable via cargo run, not committed.
+/cleaned/*.csv
+!/cleaned/.gitkeep
