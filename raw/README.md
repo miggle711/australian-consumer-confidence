@@ -29,7 +29,7 @@ for what the resulting charts show.
 - **Note**: Original export is wide format (one row per year, one column
   per month) with occasional footnote markers on values (e.g. `74.2**`).
   Reshaped to long format and stripped of markers by
-  [../src/roy_morgan.rs](../src/roy_morgan.rs).
+  `load_roy_morgan_consumer_confidence` in [../load_data.py](../load_data.py).
 
 ## rba_cash_rate_target.csv
 
@@ -41,7 +41,7 @@ for what the resulting charts show.
 - **Note**: Original export includes a metadata header block (series
   descriptions, units, series IDs) and dozens of related columns (interbank
   rates, BABs/NCDs, OIS, Treasury Notes). Only the Cash Rate Target column
-  is extracted, by [../src/rba_cash_rate.rs](../src/rba_cash_rate.rs).
+  is extracted, by `load_rba_cash_rate_target` in [../load_data.py](../load_data.py).
 
 ## abs_cpi_quarterly.csv
 
@@ -54,7 +54,25 @@ for what the resulting charts show.
 - **Note**: Original export includes per-capital-city columns (Sydney,
   Melbourne, Brisbane, etc.); only the national "Australia" index level and
   percentage-change-from-previous-period columns are extracted, by
-  [../src/abs_cpi.rs](../src/abs_cpi.rs).
+  `load_abs_cpi_quarterly` in [../load_data.py](../load_data.py).
+
+## abs_labour_force.csv
+
+- **Series**: Labour force status by Sex, Australia;  unemployment rate and
+  participation rate, seasonally adjusted (ABS Table 001, from catalogue
+  6202.0 Labour Force, Australia)
+- **Source**: [ABS Labour Force, Australia](https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/latest-release)
+- **Coverage**: February 1978 – June 2026, monthly
+- **Retrieved**: manually downloaded by user (as xlsx), 2026-08-01
+- **Note**: Original download is
+  `raw/Table 001. Labour force status by Sex, Australia - Trend, Seasonally adjusted and Original.xlsx`,
+  converted to CSV (ISO dates) for the loader. The workbook has 115 columns
+  (Persons/Males/Females × Trend/Seasonally Adjusted/Original for a dozen
+  labour force measures); only national "Persons, Seasonally Adjusted"
+  unemployment rate and participation rate are extracted, by
+  `load_abs_labour_force` in [../load_data.py](../load_data.py). Column
+  labels repeat across the three series-type variants, so the loader
+  matches on label text *and* the series-type header row together.
 
 ## RBA CPI- All Groups, Index numbers and Percentage change.xlsx
 
