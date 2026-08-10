@@ -22,8 +22,8 @@ Investigating how Australians feel about the economy using consumer confidence s
 - Iron ore / coal export prices (China-linked trade)
 - Net overseas migration (ABS)
 - [RBA General Statistics](https://www.rba.gov.au/statistics/)
-- Federal election dates (test whether confidence dips pre-election and recovers after, using the same shaded-overlay technique as recessions)
-- Commonwealth Budget night dates specifically (short-term confidence reaction to tax/spending announcements)
+- Federal election dates: wired up, see below
+- Commonwealth Budget night dates: wired up, see below
 - Fuel/electricity price indices (queued, likely from ABS CPI sub-group tables 3/8)
 - ASX 200 / equity market performance (queued)
 - NAB Business Confidence/Conditions Survey (queued)
@@ -57,6 +57,12 @@ renders every chart into [plots/](plots/).
 | RBA Cash Rate Target | `raw/rba_cash_rate_target.csv` | `load_rba_cash_rate_target` (RBA statistical table export, daily) |
 | ABS CPI (All Groups, Australia) | `raw/abs_cpi_quarterly.csv` | `load_abs_cpi_quarterly` (ABS Table 17 export, quarterly, 1948-present) |
 | ABS Labour Force (unemployment & participation rate, Australia) | `raw/abs_labour_force.csv` | `load_abs_labour_force` (ABS Table 001 export, monthly, 1978-present) |
+
+Two hand-curated event-date files are also loaded directly in `plot.py`
+(not part of the tidy `combined` frame, since they're markers, not
+measured values): `raw/events_elections.csv` (21 federal elections,
+1972-2025) and `raw/events_budgets.csv` (34 budget nights, 1994-2026). See
+[raw/README.md](raw/README.md) for sourcing.
 
 Raw source files in `raw/` are committed, with provenance documented in
 [raw/README.md](raw/README.md). `cleaned/*.csv` is gitignored since it's

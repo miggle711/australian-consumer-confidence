@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
 REPO_ROOT = Path(__file__).resolve().parent
+RAW_DIR = REPO_ROOT / "raw"
 CLEANED_DIR = REPO_ROOT / "cleaned"
 PLOTS_DIR = REPO_ROOT / "plots"
 
@@ -90,6 +91,69 @@ def build_scatter_confidence_vs_cpi(combined: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def build_scatter_confidence_delta_vs_cashrate_delta(combined: pd.DataFrame) -> pd.DataFrame:
+    """Month-over-month change in confidence vs month-over-month change in
+    cash rate, rather than levels: tests whether confidence reacts to the
+    pace/direction of rate moves rather than the rate itself."""
+    confidence = combined[combined["series"] == "anz_roy_morgan_consumer_confidence"][
+        ["date", "value"]
+    ].sort_values("date")
+    cash_rate = combined[combined["series"] == "rba_cash_rate_target"][["date", "value"]].sort_values(
+        "date"
+    )
+
+    merged = pd.merge_asof(
+        confidence, cash_rate, on="date", direction="backward", suffixes=("_confidence", "_cashrate")
+    ).dropna()
+
+    merged["confidence_delta"] = merged["value_confidence"].diff()
+    merged["cash_rate_delta"] = merged["value_cashrate"].diff()
+    merged = merged.dropna(subset=["confidence_delta", "cash_rate_delta"])
+
+    return pd.DataFrame(
+        {
+            "confidence_delta": merged["confidence_delta"],
+            "cash_rate_delta": merged["cash_rate_delta"],
+        }
+    )
+
+
+def build_rolling_correlation_confidence_vs_cashrate(combined: pd.DataFrame, window_months: int = 24) -> pd.DataFrame:
+    """Monthly confidence/cash-rate pairs (as-of join), then a rolling
+    Pearson correlation over a trailing window: shows whether the
+    relationship strengthens in specific periods (e.g. hiking cycles)
+    rather than assuming it's constant across the whole series. Also
+    computes the trailing net cash rate change and trailing average CPI
+    inflation over the same window, to test whether hiking/easing cycles
+    or the inflation environment explain when the correlation flips sign."""
+    confidence = combined[combined["series"] == "anz_roy_morgan_consumer_confidence"][
+        ["date", "value"]
+    ].sort_values("date")
+    cash_rate = combined[combined["series"] == "rba_cash_rate_target"][["date", "value"]].sort_values(
+        "date"
+    )
+    cpi_pct = combined[combined["series"] == "abs_cpi_pct_change_australia"][["date", "value"]].sort_values(
+        "date"
+    )
+
+    merged = pd.merge_asof(
+        confidence, cash_rate, on="date", direction="backward", suffixes=("_confidence", "_cashrate")
+    ).dropna()
+    merged = pd.merge_asof(merged, cpi_pct, on="date", direction="backward").rename(
+        columns={"value": "cpi_pct_change"}
+    )
+
+    merged["rolling_corr"] = (
+        merged["value_confidence"].rolling(window_months).corr(merged["value_cashrate"])
+    )
+    merged["rate_trend"] = merged["value_cashrate"].diff(window_months)
+    # cpi_pct_change is quarter-over-quarter; annualize (x4) to compare
+    # against the RBA's 2-3% annual inflation target.
+    merged["cpi_trailing_avg"] = merged["cpi_pct_change"].rolling(window_months).mean() * 4
+
+    return merged[["date", "rolling_corr", "rate_trend", "cpi_trailing_avg"]].dropna()
+
+
 def build_scatter_confidence_vs_unemployment(combined: pd.DataFrame) -> pd.DataFrame:
     """Matches each confidence reading to the unemployment rate for the
     same month (both series are monthly)."""
@@ -113,9 +177,78 @@ def build_scatter_confidence_vs_unemployment(combined: pd.DataFrame) -> pd.DataF
     )
 
 
+def build_survey_agreement(combined: pd.DataFrame) -> pd.DataFrame:
+    """Matches Roy Morgan and Westpac-MI confidence readings for the same
+    month, over their overlapping window (2013-present): tests whether the
+    two independently-run confidence surveys actually agree with each
+    other, rather than assuming they measure the same thing."""
+    roy_morgan = combined[combined["series"] == "anz_roy_morgan_consumer_confidence"][
+        ["date", "value"]
+    ].copy()
+    westpac = combined[combined["series"] == "westpac_mi_consumer_sentiment"][["date", "value"]].copy()
+
+    roy_morgan["month"] = roy_morgan["date"].dt.to_period("M")
+    westpac["month"] = westpac["date"].dt.to_period("M")
+
+    merged = roy_morgan.merge(westpac, on="month", suffixes=("_rm", "_wp"))
+
+    return pd.DataFrame(
+        {
+            "date": merged["month"].dt.to_timestamp(),
+            "roy_morgan": merged["value_rm"],
+            "westpac": merged["value_wp"],
+            "spread": merged["value_rm"] - merged["value_wp"],
+        }
+    )
+
+
+def build_event_window_deltas(combined: pd.DataFrame, events: pd.DataFrame, window_months: int = 2) -> pd.DataFrame:
+    """For each event date, compares mean confidence in the window_months
+    before it to the window_months after it. Returns one row per event with
+    the before/after means and the delta, so an average effect can be
+    computed across many events instead of eyeballing a single noisy
+    timeline for a pattern too small to see."""
+    confidence = combined[combined["series"] == "anz_roy_morgan_consumer_confidence"][
+        ["date", "value"]
+    ].sort_values("date")
+
+    rows = []
+    for _, event in events.iterrows():
+        event_date = event["date"]
+        before_start = event_date - pd.DateOffset(months=window_months)
+        after_end = event_date + pd.DateOffset(months=window_months)
+
+        before = confidence[(confidence["date"] >= before_start) & (confidence["date"] < event_date)]
+        after = confidence[(confidence["date"] >= event_date) & (confidence["date"] <= after_end)]
+
+        if before.empty or after.empty:
+            continue
+
+        before_mean = before["value"].mean()
+        after_mean = after["value"].mean()
+        rows.append(
+            {
+                "date": event_date,
+                "label": event["label"],
+                "before_mean": before_mean,
+                "after_mean": after_mean,
+                "delta": after_mean - before_mean,
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
 # ---------------------------------------------------------------------------
 # Plotting
 # ---------------------------------------------------------------------------
+
+
+def load_events(filename: str) -> pd.DataFrame:
+    """Loads a hand-curated event-date CSV (date, label columns) from
+    raw/, used for vertical markers rather than a plotted series. See
+    raw/README.md for provenance."""
+    return pd.read_csv(RAW_DIR / filename, parse_dates=["date"])
 
 
 def series_xy(combined: pd.DataFrame, series: str, since: Optional[pd.Timestamp] = None):
@@ -198,6 +331,18 @@ def plot_scatter_confidence_vs_cpi(scatter: pd.DataFrame):
     save(fig, "scatter_confidence_vs_cpi")
 
 
+def plot_scatter_confidence_delta_vs_cashrate_delta(scatter: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(10, 7))
+    ax.scatter(scatter["cash_rate_delta"], scatter["confidence_delta"], color="#8338ec", s=16, alpha=0.7)
+    ax.axhline(0, color="#888888", linewidth=0.8)
+    ax.axvline(0, color="#888888", linewidth=0.8)
+    ax.set_title("Month-over-Month Change: Confidence vs Cash Rate (2011-2026)", fontsize=14)
+    ax.set_xlabel("Cash Rate Change (percentage points)")
+    ax.set_ylabel("Confidence Change (index points)")
+    ax.grid(True, alpha=0.3)
+    save(fig, "scatter_confidence_delta_vs_cashrate_delta")
+
+
 def plot_scatter_confidence_vs_unemployment(scatter: pd.DataFrame):
     fig, ax = plt.subplots(figsize=(10, 7))
     ax.scatter(scatter["unemployment_rate"], scatter["confidence"], color="#588157", s=12, alpha=0.7)
@@ -206,6 +351,92 @@ def plot_scatter_confidence_vs_unemployment(scatter: pd.DataFrame):
     ax.set_ylabel("ANZ-Roy Morgan Consumer Confidence")
     ax.grid(True, alpha=0.3)
     save(fig, "scatter_confidence_vs_unemployment")
+
+
+def plot_survey_agreement_scatter(agreement: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(9, 9))
+
+    lo = min(agreement["roy_morgan"].min(), agreement["westpac"].min()) - 2
+    hi = max(agreement["roy_morgan"].max(), agreement["westpac"].max()) + 2
+    ax.plot([lo, hi], [lo, hi], color="#888888", linewidth=1, linestyle="--", label="Perfect agreement (y = x)")
+
+    ax.scatter(agreement["westpac"], agreement["roy_morgan"], color="#3d5a80", s=16, alpha=0.7)
+
+    corr = agreement["roy_morgan"].corr(agreement["westpac"])
+    ax.set_title(f"Roy Morgan vs Westpac-MI Confidence, Same Month (2013-2026)\nPearson correlation: {corr:.2f}", fontsize=13)
+    ax.set_xlabel("Westpac-MI Consumer Sentiment")
+    ax.set_ylabel("ANZ-Roy Morgan Consumer Confidence")
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
+    ax.set_aspect("equal")
+    ax.legend(loc="upper left", fontsize=9)
+    ax.grid(True, alpha=0.3)
+    save(fig, "scatter_survey_agreement")
+
+
+def plot_survey_agreement_spread(agreement: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(13, 7))
+    ax.plot(agreement["date"], agreement["spread"], color="#8338ec", linewidth=1.3)
+    ax.axhline(0, color="#888888", linewidth=0.8)
+    ax.fill_between(agreement["date"], agreement["spread"], 0, color="#8338ec", alpha=0.15)
+    ax.set_title("Survey Spread: Roy Morgan minus Westpac-MI, Same Month (2013-2026)", fontsize=14)
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Roy Morgan − Westpac-MI (index points)")
+    ax.grid(True, alpha=0.3)
+    save(fig, "survey_agreement_spread")
+
+
+def plot_rolling_correlation_confidence_vs_cashrate(rolling_corr: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(13, 7))
+
+    hiking = rolling_corr["rate_trend"] > 0
+    easing = rolling_corr["rate_trend"] < 0
+    ax.fill_between(
+        rolling_corr["date"], -1, 1, where=hiking, color="#d1495b", alpha=0.12,
+        step=None, interpolate=True, label="Net hiking (trailing 24mo)",
+    )
+    ax.fill_between(
+        rolling_corr["date"], -1, 1, where=easing, color="#3d5a80", alpha=0.12,
+        step=None, interpolate=True, label="Net easing (trailing 24mo)",
+    )
+
+    ax.plot(rolling_corr["date"], rolling_corr["rolling_corr"], color="#8338ec", linewidth=1.5,
+             label="Rolling correlation")
+    ax.axhline(0, color="#888888", linewidth=0.8)
+    ax.set_title("24-Month Rolling Correlation: Confidence vs Cash Rate, by Rate Cycle Direction (2011-2026)", fontsize=13)
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Rolling Pearson correlation")
+    ax.set_ylim(-1, 1)
+    ax.legend(loc="lower right", fontsize=9)
+    ax.grid(True, alpha=0.3)
+    save(fig, "rolling_correlation_confidence_vs_cashrate")
+
+
+def plot_rolling_correlation_confidence_vs_cashrate_by_inflation(rolling_corr: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(13, 7))
+
+    rba_target_midpoint = 2.5
+    elevated = rolling_corr["cpi_trailing_avg"] > rba_target_midpoint
+    low = rolling_corr["cpi_trailing_avg"] <= rba_target_midpoint
+    ax.fill_between(
+        rolling_corr["date"], -1, 1, where=elevated, color="#d1495b", alpha=0.12,
+        step=None, interpolate=True, label="Elevated inflation (trailing 24mo avg > 2.5%)",
+    )
+    ax.fill_between(
+        rolling_corr["date"], -1, 1, where=low, color="#3d5a80", alpha=0.12,
+        step=None, interpolate=True, label="Low/normal inflation (trailing 24mo avg <= 2.5%)",
+    )
+
+    ax.plot(rolling_corr["date"], rolling_corr["rolling_corr"], color="#8338ec", linewidth=1.5,
+             label="Rolling correlation")
+    ax.axhline(0, color="#888888", linewidth=0.8)
+    ax.set_title("24-Month Rolling Correlation: Confidence vs Cash Rate, by Inflation Environment (2011-2026)", fontsize=13)
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Rolling Pearson correlation")
+    ax.set_ylim(-1, 1)
+    ax.legend(loc="lower right", fontsize=9)
+    ax.grid(True, alpha=0.3)
+    save(fig, "rolling_correlation_confidence_vs_cashrate_by_inflation")
 
 
 def plot_confidence_with_recessions(combined: pd.DataFrame):
@@ -230,6 +461,78 @@ def plot_confidence_with_recessions(combined: pd.DataFrame):
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax.grid(True, alpha=0.3)
     save(fig, "confidence_with_recessions")
+
+
+def plot_confidence_with_elections(combined: pd.DataFrame, elections: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(13, 7))
+
+    for series in ("anz_roy_morgan_consumer_confidence", "westpac_mi_consumer_sentiment"):
+        dates, vals = series_xy(combined, series)
+        ax.plot(dates, vals, color=COLORS[series], linewidth=1.3, label=SERIES_LABELS[series], zorder=3)
+
+    for d in elections["date"]:
+        ax.axvline(d, color="#d1495b", linewidth=1.0, alpha=0.5, zorder=1)
+
+    handles, labels = ax.get_legend_handles_labels()
+    handles.append(plt.Line2D([0], [0], color="#d1495b", alpha=0.5, linewidth=1.5))
+    labels.append("Federal election")
+    ax.legend(handles, labels, loc="upper right", fontsize=9)
+
+    ax.set_title("Australian Consumer Confidence with Federal Elections Marked (1972-2025)", fontsize=14)
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Confidence Index")
+    ax.xaxis.set_major_locator(mdates.YearLocator(5))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.grid(True, alpha=0.3)
+    save(fig, "confidence_with_elections")
+
+
+def plot_confidence_with_budgets(combined: pd.DataFrame, budgets: pd.DataFrame):
+    cutoff = pd.Timestamp("2011-01-01")
+
+    fig, ax = plt.subplots(figsize=(13, 7))
+
+    for series in ("anz_roy_morgan_consumer_confidence", "westpac_mi_consumer_sentiment"):
+        dates, vals = series_xy(combined, series, since=cutoff)
+        ax.plot(dates, vals, color=COLORS[series], linewidth=1.3, label=SERIES_LABELS[series], zorder=3)
+
+    for d in budgets["date"]:
+        if d >= cutoff:
+            ax.axvline(d, color="#2b7a78", linewidth=1.0, alpha=0.5, zorder=1)
+
+    handles, labels = ax.get_legend_handles_labels()
+    handles.append(plt.Line2D([0], [0], color="#2b7a78", alpha=0.5, linewidth=1.5))
+    labels.append("Budget night")
+    ax.legend(handles, labels, loc="upper right", fontsize=9)
+
+    ax.set_title("Australian Consumer Confidence with Budget Nights Marked (2011-2026)", fontsize=14)
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Confidence Index")
+    ax.xaxis.set_major_locator(mdates.YearLocator(2))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.grid(True, alpha=0.3)
+    save(fig, "confidence_with_budgets")
+
+
+def plot_event_window_deltas(deltas: pd.DataFrame, event_type: str, color: str, filename: str):
+    deltas = deltas.sort_values("delta").reset_index(drop=True)
+    avg_delta = deltas["delta"].mean()
+
+    fig, ax = plt.subplots(figsize=(10, max(5, 0.35 * len(deltas))))
+    y = range(len(deltas))
+    ax.hlines(y, 0, deltas["delta"], color=color, alpha=0.6, linewidth=2)
+    ax.scatter(deltas["delta"], y, color=color, s=30, zorder=3)
+    ax.axvline(0, color="#888888", linewidth=0.8)
+    ax.axvline(avg_delta, color="#d1495b", linewidth=1.2, linestyle="--",
+                label=f"Average: {avg_delta:+.2f} points")
+
+    ax.set_yticks(list(y))
+    ax.set_yticklabels(deltas["label"], fontsize=8)
+    ax.set_xlabel("Confidence change: mean(2mo after) - mean(2mo before)")
+    ax.set_title(f"Confidence Change Around Each {event_type} (±2-Month Window)", fontsize=13)
+    ax.legend(loc="lower right", fontsize=9)
+    ax.grid(True, alpha=0.3, axis="x")
+    save(fig, filename)
 
 
 def plot_confidence_and_cashrate_dual_axis(combined: pd.DataFrame):
@@ -274,6 +577,13 @@ def main():
     scatter_cashrate = build_scatter_confidence_vs_cashrate(combined)
     scatter_cpi = build_scatter_confidence_vs_cpi(combined)
     scatter_unemployment = build_scatter_confidence_vs_unemployment(combined)
+    scatter_cashrate_delta = build_scatter_confidence_delta_vs_cashrate_delta(combined)
+    rolling_corr = build_rolling_correlation_confidence_vs_cashrate(combined)
+    elections = load_events("events_elections.csv")
+    budgets = load_events("events_budgets.csv")
+    election_deltas = build_event_window_deltas(combined, elections)
+    budget_deltas = build_event_window_deltas(combined, budgets)
+    survey_agreement = build_survey_agreement(combined)
 
     plot_confidence_indices(combined)
     plot_cpi_index(combined)
@@ -282,10 +592,19 @@ def main():
     plot_scatter_confidence_vs_cashrate(scatter_cashrate)
     plot_scatter_confidence_vs_cpi(scatter_cpi)
     plot_scatter_confidence_vs_unemployment(scatter_unemployment)
+    plot_scatter_confidence_delta_vs_cashrate_delta(scatter_cashrate_delta)
+    plot_rolling_correlation_confidence_vs_cashrate(rolling_corr)
+    plot_rolling_correlation_confidence_vs_cashrate_by_inflation(rolling_corr)
     plot_confidence_with_recessions(combined)
+    plot_confidence_with_elections(combined, elections)
+    plot_confidence_with_budgets(combined, budgets)
+    plot_event_window_deltas(election_deltas, "Election", "#d1495b", "event_window_deltas_elections")
+    plot_event_window_deltas(budget_deltas, "Budget", "#2b7a78", "event_window_deltas_budgets")
+    plot_survey_agreement_scatter(survey_agreement)
+    plot_survey_agreement_spread(survey_agreement)
     plot_confidence_and_cashrate_dual_axis(combined)
 
-    print(f"wrote 9 charts to {PLOTS_DIR}")
+    print(f"wrote 18 charts to {PLOTS_DIR}")
 
 
 if __name__ == "__main__":
