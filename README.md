@@ -85,3 +85,5 @@ and observations from those charts are tracked in
 already explored, and add to it as new charts turn up something worth
 noting.
 
+- when using 2 columns, ensure the size of the idioms are big enough.
+- add accompanying paragraphs to complement the visualisations.

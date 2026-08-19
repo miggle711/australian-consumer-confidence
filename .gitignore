@@ -5,3 +5,7 @@ __pycache__/
 # Pipeline output: regenerable via pipeline.py, not committed.
 /cleaned/**/*.csv
 !/cleaned/.gitkeep
+
+# Tableau export: regenerable via export_tableau.py, not committed.
+/tableau_export/*.csv
+.venv/

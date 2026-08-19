@@ -281,6 +281,51 @@ overlays, the dual-axis chart) should be read as two related but
 non-interchangeable measures, not duplicate views of the same number, and
 the pre-2020 vs. post-2020 relationship between them isn't stable.
 
+## What actually moved confidence, shown directly
+
+[plots/confidence_with_shocks.png](plots/confidence_with_shocks.png)
+
+Every finding above points the same direction: none of cash rate, CPI, or
+unemployment *level* predicts confidence, month-to-month rate changes
+don't either, and neither elections nor budgets show a consistent average
+effect. What's left is discrete shocks and the surrounding regime,
+demonstrated concretely so far only by cross-referencing the recession
+overlay and the rolling-correlation regime comparison.
+
+This chart makes that conclusion visible on its own: the same confidence
+timeline as the recession overlay, but annotated with the four specific
+episodes the rest of the analysis identified as real drivers, rather than
+generic recession shading. The 1990-91 trough (deepest reading in the
+50-year series) and the COVID crash (116 -> 79.8 in two months) are the
+two sharpest, clearest shocks in the whole dataset. The 2022-23 hiking
+cycle and the resulting sustained low (2023-2026, with no declared
+recession) are marked as a single connected episode rather than a
+standalone "rates caused it" story, consistent with the earlier finding
+that the correlation there reflects co-movement over a multi-year window,
+not a month-to-month causal link.
+
+## The calendar heatmap shows single-month shocks, not the slow 2022 grind
+
+[plots/confidence_calendar_heatmap.png](plots/confidence_calendar_heatmap.png)
+
+Reshaped month-over-month confidence change into a year x month grid
+(1990-2026) to see whether the shock episodes are visible as a block of
+colour, without needing to read them off a timeline. March 2020 (COVID)
+is unmistakable, the single most extreme cell in the whole grid at
+-21.4 points, and January 1990 (-recession lead-in) is similarly stark
+at the other end.
+
+The 2022-23 hiking/inflation period does **not** show up as a standout
+cell the way COVID does: it's a string of unremarkable, mildly negative
+months rather than one dramatic swing. This is consistent with the
+month-to-month delta scatter finding (large single-month confidence
+swings aren't associated with the RBA's actual rate-change months); the
+2022-23 decline was a grind, accumulated gradually, not a shock in the
+same sense as COVID. A viewer scanning the heatmap for "what happened in
+2022" could easily miss it, so this chart needs to be paired with the
+shock-annotation timeline or explicit callout text, not shown alone, or
+it risks implying nothing happened that year.
+
 ## Open questions / next steps
 
 - Run the same rolling-correlation treatment against CPI and unemployment

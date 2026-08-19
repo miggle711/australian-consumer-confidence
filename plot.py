@@ -46,6 +46,17 @@ RECESSIONS = [
     ("2020-03-01", "2020-09-01"),
 ]
 
+# Discrete shocks identified in INSIGHTS.md as the actual drivers behind
+# confidence's biggest moves, in contrast to the scheduled/level-based
+# suspects (rate level, CPI level, unemployment level, elections, budgets)
+# tested and ruled out elsewhere in the pipeline.
+SHOCKS = [
+    ("1990-11-01", "1990-91 recession\n(deepest reading in the series)", -55),
+    ("2020-04-01", "COVID crash\n(116 -> 79.8 in two months)", -30),
+    ("2022-09-01", "2022-23 hiking cycle +\ninflation shock", 55),
+    ("2024-09-01", "Sustained low without a\ndeclared recession", 20),
+]
+
 
 # ---------------------------------------------------------------------------
 # Derived data for plotting: date-matched scatter joins. Kept in one place
@@ -175,6 +186,25 @@ def build_scatter_confidence_vs_unemployment(combined: pd.DataFrame) -> pd.DataF
             "unemployment_rate": merged["value_unemployment"],
         }
     )
+
+
+def build_confidence_calendar_heatmap(combined: pd.DataFrame, since_year: int = 1990) -> pd.DataFrame:
+    """Month-over-month change in Roy Morgan confidence, reshaped into a
+    year x month grid: shows the shock months (COVID, 1990-91, 2022) as a
+    block of colour a viewer can spot at a glance, which a single-line
+    timeline can't do as viscerally. Cropped to since_year so the panel
+    stays compact on a scrollable page while still covering all four shock
+    episodes (1990-91, COVID, 2022 hiking, current low)."""
+    confidence = combined[combined["series"] == "anz_roy_morgan_consumer_confidence"][
+        ["date", "value"]
+    ].sort_values("date").copy()
+    confidence["delta"] = confidence["value"].diff()
+    confidence["year"] = confidence["date"].dt.year
+    confidence["month"] = confidence["date"].dt.month
+    confidence = confidence[confidence["year"] >= since_year]
+
+    grid = confidence.pivot_table(index="year", columns="month", values="delta")
+    return grid.sort_index(ascending=False)
 
 
 def build_survey_agreement(combined: pd.DataFrame) -> pd.DataFrame:
@@ -353,6 +383,30 @@ def plot_scatter_confidence_vs_unemployment(scatter: pd.DataFrame):
     save(fig, "scatter_confidence_vs_unemployment")
 
 
+def plot_confidence_calendar_heatmap(grid: pd.DataFrame):
+    """Year (row) x month (column) heatmap of month-over-month confidence
+    change, diverging red (falling) to blue (rising) around zero. An
+    alternative to the shock-annotation line chart: lets a viewer spot the
+    shock months as a block of colour rather than reading it off a
+    timeline."""
+    month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    fig, ax = plt.subplots(figsize=(10, max(6, 0.22 * len(grid))))
+    vmax = grid.abs().max().max()
+    im = ax.imshow(grid.values, cmap="RdBu", vmin=-vmax, vmax=vmax, aspect="auto")
+
+    ax.set_xticks(range(12))
+    ax.set_xticklabels(month_labels, fontsize=8)
+    ax.set_yticks(range(len(grid)))
+    ax.set_yticklabels(grid.index, fontsize=6)
+    ax.set_title("Month-over-Month Confidence Change by Year\n(red = falling, blue = rising)", fontsize=13)
+
+    cbar = fig.colorbar(im, ax=ax, shrink=0.5, pad=0.02)
+    cbar.set_label("Change in confidence index (points)", fontsize=9)
+
+    save(fig, "confidence_calendar_heatmap")
+
+
 def plot_survey_agreement_scatter(agreement: pd.DataFrame):
     fig, ax = plt.subplots(figsize=(9, 9))
 
@@ -461,6 +515,44 @@ def plot_confidence_with_recessions(combined: pd.DataFrame):
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax.grid(True, alpha=0.3)
     save(fig, "confidence_with_recessions")
+
+
+def plot_confidence_with_shocks(combined: pd.DataFrame):
+    """Same confidence timeline as plot_confidence_with_recessions, but
+    annotated with the specific discrete shocks the rest of the analysis
+    points to as the real driver of confidence's biggest moves, rather than
+    generic recession shading. Gives the "it's shocks, not indicator
+    levels" finding its own chart instead of leaving the reader to piece it
+    together from the recession overlay and rolling-correlation charts."""
+    fig, ax = plt.subplots(figsize=(13, 7))
+
+    for series in ("anz_roy_morgan_consumer_confidence", "westpac_mi_consumer_sentiment"):
+        dates, vals = series_xy(combined, series)
+        ax.plot(dates, vals, color=COLORS[series], linewidth=1.3, label=SERIES_LABELS[series], zorder=3)
+
+    roy_morgan = combined[combined["series"] == "anz_roy_morgan_consumer_confidence"].sort_values("date")
+
+    for date_str, text, y_offset in SHOCKS:
+        shock_date = pd.Timestamp(date_str)
+        ax.axvline(shock_date, color="#d1495b", linewidth=1.0, alpha=0.5, zorder=1)
+
+        nearest = roy_morgan.iloc[(roy_morgan["date"] - shock_date).abs().argsort()[:1]]
+        y = float(nearest["value"].iloc[0])
+        va = "top" if y_offset < 0 else "bottom"
+        ax.annotate(
+            text, xy=(shock_date, y), xytext=(0, y_offset), textcoords="offset points",
+            ha="center", va=va, fontsize=8, color="#333333",
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#d1495b", alpha=0.9),
+        )
+
+    ax.legend(loc="upper left", fontsize=9)
+    ax.set_title("Australian Consumer Confidence: What Actually Moved It", fontsize=14)
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Confidence Index")
+    ax.xaxis.set_major_locator(mdates.YearLocator(5))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.grid(True, alpha=0.3)
+    save(fig, "confidence_with_shocks")
 
 
 def plot_confidence_with_elections(combined: pd.DataFrame, elections: pd.DataFrame):
@@ -584,6 +676,7 @@ def main():
     election_deltas = build_event_window_deltas(combined, elections)
     budget_deltas = build_event_window_deltas(combined, budgets)
     survey_agreement = build_survey_agreement(combined)
+    calendar_heatmap = build_confidence_calendar_heatmap(combined)
 
     plot_confidence_indices(combined)
     plot_cpi_index(combined)
@@ -596,6 +689,7 @@ def main():
     plot_rolling_correlation_confidence_vs_cashrate(rolling_corr)
     plot_rolling_correlation_confidence_vs_cashrate_by_inflation(rolling_corr)
     plot_confidence_with_recessions(combined)
+    plot_confidence_with_shocks(combined)
     plot_confidence_with_elections(combined, elections)
     plot_confidence_with_budgets(combined, budgets)
     plot_event_window_deltas(election_deltas, "Election", "#d1495b", "event_window_deltas_elections")
@@ -603,8 +697,9 @@ def main():
     plot_survey_agreement_scatter(survey_agreement)
     plot_survey_agreement_spread(survey_agreement)
     plot_confidence_and_cashrate_dual_axis(combined)
+    plot_confidence_calendar_heatmap(calendar_heatmap)
 
-    print(f"wrote 18 charts to {PLOTS_DIR}")
+    print(f"wrote 20 charts to {PLOTS_DIR}")
 
 
 if __name__ == "__main__":
