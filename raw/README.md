@@ -89,6 +89,57 @@ for what the resulting charts show.
   test whether confidence dips pre-election and recovers after, the same
   question the recession-overlay chart asks of recessions.
 
+## Recession periods (RECESSIONS constant in plot.py)
+
+- **Series**: Four major Australian downturn periods (1974-75, 1982-83,
+  1990-91, 2020), shaded as background bands on
+  [plots/confidence_with_recessions.png](../plots/confidence_with_recessions.png)
+  and [plots/confidence_with_shocks.png](../plots/confidence_with_shocks.png).
+  Not a raw file (no CSV in this directory); hardcoded as the `RECESSIONS`
+  constant in [../plot.py](../plot.py).
+- **Definition used**: these bands are **peak-to-trough downturn periods**,
+  the RBA's own broader business-cycle framing, not strictly "every quarter
+  in the band had negative GDP". The stricter textbook definition (two
+  consecutive quarters of negative real GDP growth) only lines up cleanly
+  with a single continuous band for 2020; for the three older recessions,
+  the negative-GDP quarters are split into an earlier isolated quarter and
+  a later consecutive pair, with a positive quarter in between (see the
+  per-quarter figures below). The bands span both parts of each episode
+  rather than showing them as two separate narrower bands, since that
+  matches how these recessions are conventionally referred to as a single
+  named episode (e.g. "the 1990-91 recession").
+- **Source**: real GDP quarter-on-quarter % change, computed from the RBA's
+  own published Statistical Table H1 ("Gross Domestic Product and Income"),
+  which is itself sourced from ABS National Accounts (Cat. No. 5206.0):
+  [RBA Table H1](https://www.rba.gov.au/statistics/tables/xls/h01hist.xlsx).
+  2020 quarters confirmed directly against the
+  [ABS media release](https://www.abs.gov.au/media-centre/media-releases/economic-activity-fell-70-cent-june-quarter)
+  for that quarter. Broader peak-to-trough framing for 1990-91 cross-checked
+  against Ian Macfarlane's RBA Boyer Lecture 4,
+  ["The Recession of 1990 and its Legacy"](https://www.abc.net.au/listen/programs/boyerlectures/lecture-4-the-recession-of-1990-and-its-legacy/3353124)
+  (2006).
+- **Negative-GDP quarters found** (current fully-revised chain-volume
+  series; differs slightly from figures published at the time, since ABS
+  National Accounts data is revised/rebased over the decades):
+  - 1974-75: Jun-1974 (-2.0%, isolated) and Sep-1975/Dec-1975 (-1.1%/-1.5%,
+    consecutive pair) -> band shown: Jun-1974 to Dec-1975
+  - 1982-83: Mar-1982 (-0.8%, isolated) and Sep-1982 to Jun-1983 (four
+    consecutive negative quarters) -> band shown: Mar-1982 to Jun-1983
+  - 1990-91: Sep-1990 (-0.5%, isolated) and Mar-1991/Jun-1991 (-1.3%/-0.2%,
+    consecutive pair) -> band shown: Sep-1990 to Jun-1991
+  - 2020: Mar-2020 (-0.3%) and Jun-2020 (-7.0%), consecutive -> band shown:
+    Mar-2020 to Jun-2020. The only period of the four that is a textbook
+    "two consecutive negative quarters" recession on its own.
+- **Compiled**: 2026-08-20
+- **Note**: The RBA's own academic business-cycle dating paper (RDP 2005-07,
+  "The Australian Business Cycle: A Coincident Indicator Approach", Gillitzer,
+  Kearns & Richards, 2005) independently identifies the same three older
+  recessions (1974-75, 1982-83, 1990-91), but its PDF and companion pages on
+  rba.gov.au block automated fetches, so its exact quarterly dating could
+  not be directly quoted here; the dates above are computed independently
+  from the same underlying RBA/ABS GDP series rather than copied from that
+  paper.
+
 ## events_budgets.csv
 
 - **Series**: Australian Commonwealth Budget night dates, 1994-2026

@@ -39,11 +39,16 @@ SERIES_LABELS = {
     "rba_cash_rate_target": "RBA Cash Rate Target",
 }
 
+# Major downturn periods, RBA peak-to-trough framing (not strictly "every
+# quarter here had negative GDP"; see raw/README.md for sourcing and the
+# distinction between this framing and the ABS two-consecutive-quarters
+# technical-recession definition). 2020 is the one period that also meets
+# the strict definition directly (ABS: -0.3% Mar-2020, -7.0% Jun-2020).
 RECESSIONS = [
-    ("1974-09-01", "1975-06-01"),
-    ("1982-06-01", "1983-06-01"),
-    ("1990-09-01", "1991-09-01"),
-    ("2020-03-01", "2020-09-01"),
+    ("1974-06-01", "1975-12-01"),
+    ("1982-03-01", "1983-06-01"),
+    ("1990-09-01", "1991-06-01"),
+    ("2020-03-01", "2020-06-01"),
 ]
 
 # Discrete shocks identified in INSIGHTS.md as the actual drivers behind
@@ -527,6 +532,12 @@ def plot_confidence_with_recessions(combined: pd.DataFrame):
     ax.xaxis.set_major_locator(mdates.YearLocator(5))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax.grid(True, alpha=0.3)
+    fig.text(
+        0.01, 0.01,
+        "Shaded bands show the broader downturn around each recession; only 2020 matches the strict\n"
+        "\"two consecutive quarters of negative GDP\" definition on its own. See raw/README.md for sourcing.",
+        fontsize=7, color="#666666", va="bottom",
+    )
     save(fig, "confidence_with_recessions")
 
 
