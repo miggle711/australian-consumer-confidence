@@ -652,7 +652,7 @@ def plot_event_window_deltas(deltas: pd.DataFrame, event_type: str, color: str, 
 
 
 def plot_confidence_and_cashrate_dual_axis(combined: pd.DataFrame):
-    cutoff = pd.Timestamp("2011-01-01")
+    cutoff = pd.Timestamp("1990-08-01")
 
     fig, ax1 = plt.subplots(figsize=(13, 7))
 
@@ -678,7 +678,7 @@ def plot_confidence_and_cashrate_dual_axis(combined: pd.DataFrame):
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=9)
 
-    ax1.set_title("Consumer Confidence vs RBA Cash Rate (2011-2026)", fontsize=14)
+    ax1.set_title("Consumer Confidence vs RBA Cash Rate (1990-2026)", fontsize=14)
     save(fig, "confidence_and_cashrate_dual_axis")
 
 

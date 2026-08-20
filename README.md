@@ -54,7 +54,7 @@ renders every chart into [plots/](plots/).
 | --- | --- | --- |
 | Westpac-MI Consumer Sentiment (AUCCI) | `raw/westpac_mi_consumer_sentiment.csv` | `load_westpac_mi_consumer_sentiment` (plain `date,value` CSV) |
 | ANZ-Roy Morgan Consumer Confidence | `raw/roy_morgan_consumer_confidence.csv` | `load_roy_morgan_consumer_confidence` (wide year x month export, 1973-present) |
-| RBA Cash Rate Target | `raw/rba_cash_rate_target.csv` | `load_rba_cash_rate_target` (RBA statistical table export, daily) |
+| RBA Cash Rate Target | `raw/rba_cash_rate_target_monthly.csv` | `load_rba_cash_rate_target` (RBA Table F1.1 export, monthly, 1990-present) |
 | ABS CPI (All Groups, Australia) | `raw/abs_cpi_quarterly.csv` | `load_abs_cpi_quarterly` (ABS Table 17 export, quarterly, 1948-present) |
 | ABS Labour Force (unemployment & participation rate, Australia) | `raw/abs_labour_force.csv` | `load_abs_labour_force` (ABS Table 001 export, monthly, 1978-present) |
 

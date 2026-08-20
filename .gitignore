@@ -9,3 +9,7 @@ __pycache__/
 # Tableau export: regenerable via export_tableau.py, not committed.
 /tableau_export/*.csv
 .venv/
+
+# Tableau lock/temp files, not the workbook itself.
+.~*.twbr
+*.twbr

@@ -66,13 +66,16 @@ def load_roy_morgan_consumer_confidence() -> pd.DataFrame:
 
 
 def load_rba_cash_rate_target() -> pd.DataFrame:
-    """RBA Cash Rate Target. Metadata header block, then daily rows in
-    'DD-Mon-YYYY' format; only the Cash Rate Target column is kept."""
-    raw = pd.read_csv(RAW_DIR / "rba_cash_rate_target.csv", header=None, skip_blank_lines=False)
+    """RBA Cash Rate Target (Table F1.1, monthly). Metadata header block,
+    then monthly rows in 'Mon-YYYY' format; only the Cash Rate Target
+    column is kept. Cash Rate Target data starts Aug-1990 (the RBA didn't
+    announce a single target rate before Jan-1990); rows before that are
+    dropped by the value-notna mask below since the column is empty."""
+    raw = pd.read_csv(RAW_DIR / "rba_cash_rate_target_monthly.csv", header=None, skip_blank_lines=False)
     header_row_idx = raw.index[raw[0] == "Series ID"][0]
     data = raw.iloc[header_row_idx + 1 :]
 
-    dates = pd.to_datetime(data[0], format="%d-%b-%Y", errors="coerce")
+    dates = pd.to_datetime(data[0], format="%b-%Y", errors="coerce")
     values = pd.to_numeric(data[1], errors="coerce")
     mask = dates.notna() & values.notna()
 
@@ -176,7 +179,7 @@ LOADERS = {
         "roy_morgan_consumer_confidence.csv",
         load_roy_morgan_consumer_confidence,
     ),
-    "RBA Cash Rate Target": ("rba_cash_rate_target.csv", load_rba_cash_rate_target),
+    "RBA Cash Rate Target": ("rba_cash_rate_target_monthly.csv", load_rba_cash_rate_target),
     "ABS CPI (All Groups, Australia)": ("abs_cpi_quarterly.csv", load_abs_cpi_quarterly),
     "ABS Labour Force (Unemployment & Participation Rate)": (
         "abs_labour_force.csv",

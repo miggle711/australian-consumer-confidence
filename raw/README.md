@@ -31,17 +31,29 @@ for what the resulting charts show.
   Reshaped to long format and stripped of markers by
   `load_roy_morgan_consumer_confidence` in [../load_data.py](../load_data.py).
 
-## rba_cash_rate_target.csv
+## rba_cash_rate_target_monthly.csv
 
-- **Series**: RBA Cash Rate Target (Table F1: Interest Rates and Yields -
-  Money Market)
-- **Source**: [RBA Statistical Tables](https://www.rba.gov.au/statistics/tables/)
-- **Coverage**: January 2011 - July 2026, daily
-- **Retrieved**: manually downloaded by user, 2026-08-01
-- **Note**: Original export includes a metadata header block (series
-  descriptions, units, series IDs) and dozens of related columns (interbank
-  rates, BABs/NCDs, OIS, Treasury Notes). Only the Cash Rate Target column
-  is extracted, by `load_rba_cash_rate_target` in [../load_data.py](../load_data.py).
+- **Series**: RBA Cash Rate Target (Table F1.1: Interest Rates and Yields -
+  Money Market - Monthly)
+- **Source**: [RBA Statistical Tables](https://www.rba.gov.au/statistics/tables/),
+  direct file: [f01hist.xlsx](https://www.rba.gov.au/statistics/tables/xls/f01hist.xlsx)
+- **Coverage**: August 1990 - July 2026, monthly. The RBA didn't announce a
+  single target cash rate before January 1990 (monetary policy was
+  conducted differently), and the Cash Rate Target column in this table is
+  itself empty until August 1990, so this is the effective start of the
+  series regardless of source.
+- **Retrieved**: manually downloaded by user, 2026-08-20
+- **Note**: Supersedes an earlier daily version of this file (Table F1,
+  January 2011 - July 2026 only, downloaded 2026-08-01), replaced once it
+  became clear the RBA also publishes a full-history monthly table
+  (F1.1) going back to 1990. Original export includes a metadata header
+  block (series descriptions, units, series IDs), a large block of empty
+  trailing rows past the last real data month, and several other columns
+  (Interbank Overnight Cash Rate, BABs/NCDs, OIS, Treasury Notes). Only the
+  Cash Rate Target column is extracted, by `load_rba_cash_rate_target` in
+  [../load_data.py](../load_data.py). Downloaded as .xlsx, converted to CSV
+  manually (Data sheet only) before loading, same convention as the ABS
+  labour force file below.
 
 ## abs_cpi_quarterly.csv
 
