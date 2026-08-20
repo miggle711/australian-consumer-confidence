@@ -8,10 +8,10 @@ Tableau.
 | File | Use in Tableau |
 | --- | --- |
 | `confidence_monthly_wide.csv` | Main source: one row per month, one column per series. Build the confidence timeline, dual-axis (confidence + cash rate), and the three "test the suspects" scatters (confidence vs cash rate/CPI/unemployment level) natively from this. Month-over-month deltas can also be computed natively here via `LOOKUP()`/`WINDOW_` table calcs, no need for a separate export. |
-| `rolling_correlation.csv` | 24-month rolling Pearson correlation (confidence vs cash rate) plus the trailing rate-trend and trailing CPI average used to shade the regime bands. Precomputed because Tableau has no native rolling-correlation table calc across two measures (try `WINDOW_CORR()` first if you want to attempt it natively instead). |
 | `event_window_deltas.csv` | One row per election/budget with before/after confidence means and the delta. Use for the diverging-bar or dumbbell chart; `event_type` column lets you filter/colour Election vs Budget in one sheet. |
 | `calendar_heatmap.csv` | Long-format (date, year, month, month_name, value, delta), 1990-2026. Build the year x month heatmap using Year on rows, month_name on columns, delta on colour. |
 | `shocks.csv` | Four hand-labelled shock dates/descriptions for the climax "what actually moved it" chart. Join as a reference line/annotation layer against the main confidence timeline. |
+| `regime_windows.csv` | Three hand-labelled start/end date ranges + plain-language label ("moving together"/"moving apart") for the confidence-vs-cash-rate overlay chart. Replaces a rolling-correlation chart: same underlying finding, shown as shaded/annotated windows on the raw lines instead of a derived statistic, since the assignment brief asks to avoid visualisations that require statistics knowledge. See INSIGHTS.md ("Moving together vs. moving apart, shown without a statistic") for why these three windows were chosen. |
 | `events_elections.csv`, `events_budgets.csv` | Passthrough of the raw event date/label tables, for reference-line overlays on the confidence timeline. |
 
 Regenerate after any change to `raw/`, `load_data.py`, or the `build_*`

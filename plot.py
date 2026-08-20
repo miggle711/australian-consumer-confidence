@@ -57,6 +57,19 @@ SHOCKS = [
     ("2024-09-01", "Sustained low without a\ndeclared recession", 20),
 ]
 
+# Regime windows where confidence and the cash rate visibly move together
+# vs. visibly move apart, identified in INSIGHTS.md via the rolling
+# correlation analysis. Shown here directly on the raw lines (annotated
+# overlay) instead of as a derived correlation statistic, so the same
+# "the relationship isn't fixed" finding doesn't require a reader to
+# understand a statistical concept to follow it (see the assignment's
+# "avoid visualisations that require knowledge of statistics" note).
+REGIME_WINDOWS = [
+    ("2016-01-01", "2017-12-31", "Rates fell, confidence rose:\nmoving apart", "#3d5a80"),
+    ("2019-01-01", "2020-12-31", "Both collapsed together in COVID,\nthen partly recovered together:\nmoving together", "#d1495b"),
+    ("2022-01-01", "2023-12-31", "Rates rose fast, confidence fell:\nmoving apart", "#3d5a80"),
+]
+
 
 # ---------------------------------------------------------------------------
 # Derived data for plotting: date-matched scatter joins. Kept in one place
@@ -658,6 +671,56 @@ def plot_confidence_and_cashrate_dual_axis(combined: pd.DataFrame):
     save(fig, "confidence_and_cashrate_dual_axis")
 
 
+def plot_confidence_and_cashrate_regimes(combined: pd.DataFrame):
+    """Same dual-axis overlay as plot_confidence_and_cashrate_dual_axis, but
+    annotated at specific windows to show directly, on the raw lines, that
+    confidence and the cash rate sometimes move together and sometimes move
+    apart. Replaces a rolling-correlation chart for the "the relationship
+    isn't fixed" beat: makes the same claim using only what's visible in
+    the two lines, no derived statistic or axis a reader has to learn."""
+    cutoff = pd.Timestamp("2011-01-01")
+
+    fig, ax1 = plt.subplots(figsize=(13, 8))
+
+    for start, end, _, color in REGIME_WINDOWS:
+        ax1.axvspan(pd.Timestamp(start), pd.Timestamp(end), color=color, alpha=0.08, zorder=0)
+
+    for series in ("anz_roy_morgan_consumer_confidence", "westpac_mi_consumer_sentiment"):
+        dates, vals = series_xy(combined, series, since=cutoff)
+        ax1.plot(dates, vals, color=COLORS[series], linewidth=1.3, label=SERIES_LABELS[series], zorder=3)
+    ax1.set_xlabel("Year")
+    ax1.set_ylabel("Confidence Index")
+    ax1.xaxis.set_major_locator(mdates.YearLocator(2))
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax1.grid(True, alpha=0.3)
+
+    ax2 = ax1.twinx()
+    cr_dates, cr_vals = series_xy(combined, "rba_cash_rate_target", since=cutoff)
+    ax2.plot(
+        cr_dates, cr_vals, color=COLORS["rba_cash_rate_target"], linewidth=1.8,
+        label=SERIES_LABELS["rba_cash_rate_target"], drawstyle="steps-post", zorder=3,
+    )
+    ax2.set_ylabel("Cash Rate Target (%)", color=COLORS["rba_cash_rate_target"])
+    ax2.tick_params(axis="y", labelcolor=COLORS["rba_cash_rate_target"])
+
+    ymin, ymax = ax1.get_ylim()
+    ax1.set_ylim(ymin, ymax + (ymax - ymin) * 0.12)
+    label_y = ymax + (ymax - ymin) * 0.03
+    for start, end, text, color in REGIME_WINDOWS:
+        mid = pd.Timestamp(start) + (pd.Timestamp(end) - pd.Timestamp(start)) / 2
+        ax1.annotate(
+            text, xy=(mid, label_y), ha="center", va="bottom", fontsize=7.5, color="#333333",
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=color, alpha=0.9),
+        )
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower left", fontsize=9)
+
+    ax1.set_title("Do Confidence and Interest Rates Move Together? It Depends on the Period (2011-2026)", fontsize=13, pad=14)
+    save(fig, "confidence_and_cashrate_regimes")
+
+
 def main():
     in_path = CLEANED_DIR / "consumer_confidence_data.csv"
     if not in_path.exists():
@@ -670,7 +733,6 @@ def main():
     scatter_cpi = build_scatter_confidence_vs_cpi(combined)
     scatter_unemployment = build_scatter_confidence_vs_unemployment(combined)
     scatter_cashrate_delta = build_scatter_confidence_delta_vs_cashrate_delta(combined)
-    rolling_corr = build_rolling_correlation_confidence_vs_cashrate(combined)
     elections = load_events("events_elections.csv")
     budgets = load_events("events_budgets.csv")
     election_deltas = build_event_window_deltas(combined, elections)
@@ -686,8 +748,7 @@ def main():
     plot_scatter_confidence_vs_cpi(scatter_cpi)
     plot_scatter_confidence_vs_unemployment(scatter_unemployment)
     plot_scatter_confidence_delta_vs_cashrate_delta(scatter_cashrate_delta)
-    plot_rolling_correlation_confidence_vs_cashrate(rolling_corr)
-    plot_rolling_correlation_confidence_vs_cashrate_by_inflation(rolling_corr)
+    plot_confidence_and_cashrate_regimes(combined)
     plot_confidence_with_recessions(combined)
     plot_confidence_with_shocks(combined)
     plot_confidence_with_elections(combined, elections)
@@ -699,7 +760,7 @@ def main():
     plot_confidence_and_cashrate_dual_axis(combined)
     plot_confidence_calendar_heatmap(calendar_heatmap)
 
-    print(f"wrote 20 charts to {PLOTS_DIR}")
+    print(f"wrote 19 charts to {PLOTS_DIR}")
 
 
 if __name__ == "__main__":

@@ -100,7 +100,17 @@ a month-to-month causal link.
 
 ## The confidence/cash-rate relationship flips sign over multi-year cycles
 
-[plots/rolling_correlation_confidence_vs_cashrate.png](plots/rolling_correlation_confidence_vs_cashrate.png)
+(chart image removed, see note below; analysis kept for reference)
+
+**Superseded for the Tableau submission by
+[plots/confidence_and_cashrate_regimes.png](plots/confidence_and_cashrate_regimes.png)**:
+the rolling correlation coefficient is a statistical concept the
+assignment brief asks to avoid unless properly taught, so the same
+finding below is shown instead as an annotated overlay of the raw
+confidence and cash-rate lines, labelled "moving together" / "moving
+apart" at each window rather than a derived -1 to +1 statistic. This
+analysis (and its chart) is kept here as the reasoning behind that
+annotated chart's window boundaries and labels.
 
 The 24-month rolling correlation between confidence and cash rate swings
 repeatedly between strongly negative (~-0.85) and strongly positive
@@ -118,9 +128,27 @@ is real, but its direction depends on the surrounding economic regime, not
 a fixed rule; a static "does A predict B" scatter can't capture this, only
 a windowed view can.
 
+## Moving together vs. moving apart, shown without a statistic
+
+[plots/confidence_and_cashrate_regimes.png](plots/confidence_and_cashrate_regimes.png)
+
+The Tableau-facing version of the finding above: same dual-axis
+confidence/cash-rate overlay as the standard dual-axis chart, but with
+three windows shaded and labelled directly on the lines rather than as a
+derived correlation number, so a general reader can verify the claim by
+eye instead of trusting a statistic. 2016-17 ("rates fell, confidence
+rose: moving apart"), 2019-21 ("both collapsed together in COVID, then
+partly recovered together: moving together"), and 2022-23 ("rates rose
+fast, confidence fell: moving apart") are the three clearest, most
+visually legible examples from the rolling-correlation analysis; the
+2013-14 and 2023 negative-correlation stretches and the 2014-15/2025
+positive ones are not shown, since they're less visually obvious on the
+raw lines and a three-window story is enough to make the "it depends on
+the period" point without overloading the chart.
+
 ## Rate-cycle direction (hiking vs. easing) does not explain the sign flips
 
-[plots/rolling_correlation_confidence_vs_cashrate.png](plots/rolling_correlation_confidence_vs_cashrate.png)
+(chart image removed along with the rolling-correlation chart above; analysis kept for reference)
 
 Tested the most obvious explanation for the regime flips above: is
 correlation negative specifically during hiking cycles and positive during
@@ -142,7 +170,7 @@ are moving."
 
 ## Elevated inflation lines up with negative correlation, but isn't sufficient alone
 
-[plots/rolling_correlation_confidence_vs_cashrate_by_inflation.png](plots/rolling_correlation_confidence_vs_cashrate_by_inflation.png)
+(chart image removed along with the rolling-correlation chart above; analysis kept for reference)
 
 Shaded the rolling correlation chart by trailing 24-month average CPI
 inflation (annualized from the quarterly % change figures), split at the
