@@ -105,6 +105,15 @@ def main():
     elections.to_csv(EXPORT_DIR / "events_elections.csv", index=False)
     budgets.to_csv(EXPORT_DIR / "events_budgets.csv", index=False)
 
+    # 6b. Combined elections + budgets, one table with an event_type column,
+    #     for the single overlay chart with a show/hide toggle (rather than
+    #     two separate near-identical timeline charts).
+    events_combined = pd.concat(
+        [elections.assign(event_type="Election"), budgets.assign(event_type="Budget")],
+        ignore_index=True,
+    )
+    events_combined.to_csv(EXPORT_DIR / "events_combined.csv", index=False)
+
     # 7. Recession periods, one row per recession with start/end/label, for
     #    the reference-band blend on the confidence timeline. See
     #    raw/README.md for sourcing and the peak-to-trough vs. strict
@@ -116,7 +125,7 @@ def main():
     )
     recessions.to_csv(EXPORT_DIR / "recessions.csv", index=False)
 
-    print(f"wrote 9 Tableau-ready CSVs to {EXPORT_DIR}")
+    print(f"wrote 10 Tableau-ready CSVs to {EXPORT_DIR}")
 
 
 if __name__ == "__main__":
