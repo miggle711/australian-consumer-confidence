@@ -21,6 +21,7 @@ import pandas as pd
 
 from plot import (
     CLEANED_DIR,
+    RECESSIONS,
     REGIME_WINDOWS,
     build_event_window_deltas,
     load_events,
@@ -104,7 +105,18 @@ def main():
     elections.to_csv(EXPORT_DIR / "events_elections.csv", index=False)
     budgets.to_csv(EXPORT_DIR / "events_budgets.csv", index=False)
 
-    print(f"wrote 8 Tableau-ready CSVs to {EXPORT_DIR}")
+    # 7. Recession periods, one row per recession with start/end/label, for
+    #    the reference-band blend on the confidence timeline. See
+    #    raw/README.md for sourcing and the peak-to-trough vs. strict
+    #    two-consecutive-quarters distinction.
+    recession_labels = ["1974-75 recession", "1982-83 recession", "1990-91 recession", "2020 recession"]
+    recessions = pd.DataFrame(
+        [(start, end, label) for (start, end), label in zip(RECESSIONS, recession_labels)],
+        columns=["start_date", "end_date", "label"],
+    )
+    recessions.to_csv(EXPORT_DIR / "recessions.csv", index=False)
+
+    print(f"wrote 9 Tableau-ready CSVs to {EXPORT_DIR}")
 
 
 if __name__ == "__main__":
